@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analyze – DermaVision</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="js/api.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>DermaVision</h1>
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="analyze.html">Analyze</a>
+        <a href="diseases.html">Diseases</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Upload Skin Image</h2>
+        <br>
+
+        <input type="file" id="imageInput" accept="image/*">
+        <br><br>
+
+        <img id="preview" style="max-width:300px; display:none; border-radius:10px;">
+        <br><br>
+
+        <button class="btn" onclick="analyzeImage()">Analyze Image</button>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none;">
+        <h3>Prediction Result</h3>
+        <br>
+
+        <p><strong>Disease:</strong> <span id="prediction"></span></p>
+        <p><strong>Confidence:</strong> <span id="confidence"></span>%</p>
+
+        <div id="riskBox" style="margin-top:15px; padding:15px; border-radius:8px; color:white;">
+            Risk Level: <span id="riskLevel"></span>
+        </div>
+
+        <br>
+        <a href="disease-details.html">
+            <button class="btn">View Full Details</button>
+        </a>
+    </div>
+
+</div>
+
+<div class="footer">
+    © 2026 DermaVision | AI Skin Disease Platform
+</div>
+
+</body>
+</html>
