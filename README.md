@@ -1,22 +1,45 @@
-# DermaVision — AI Dermal Lesion Analysis
+# DermaVision
 
-DermaVision is a full-stack skin-disease classification system that combines EfficientNet-V2-S and a Swin Transformer to analyze dermatoscopic images. The application classifies skin lesions into seven HAM10000 categories and provides supporting disease, risk, and treatment information.
+**AI-assisted dermal lesion recognition using an EfficientNet-V2-S and Swin Transformer ensemble**
 
-> ⚕️ **Medical disclaimer:** This project is for educational and research purposes only. It is not a substitute for professional diagnosis or medical advice.
+DermaVision is an educational full-stack application for analyzing dermatoscopic images and estimating the probability of seven skin-lesion classes from the HAM10000 dataset. The prediction service combines an EfficientNet-V2-S CNN and a Swin Tiny Vision Transformer, while the responsive frontend presents the predicted class, confidence, risk level, and disease-specific educational information.
 
-## Features
+> [!WARNING]
+> **Medical disclaimer:** DermaVision is for educational and research purposes only. It is not a medical device, does not provide a clinical diagnosis, and must not be used as a substitute for professional medical advice, examination, or treatment. Uploaded images should not contain personal identifiers.
 
-- Upload and preview skin-lesion images.
-- Ensemble inference using EfficientNet-V2-S and Swin Transformer.
-- Confidence percentage and risk-level indication.
-- Disease-specific causes, symptoms, treatments, prevention, and recovery details.
-- Responsive HTML, CSS, and JavaScript frontend.
-- FastAPI prediction service with CORS support.
-- HAM10000 dataset preparation and model training scripts.
+## Table of Contents
 
-## Supported Conditions
+- [Key Features](#key-features)
+- [Supported Lesion Classes](#supported-lesion-classes)
+- [System Architecture](#system-architecture)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Dataset and Checkpoints](#dataset-and-checkpoints)
+- [Installation](#installation)
+- [Model Training](#model-training)
+- [Running the Application](#running-the-application)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Evaluation](#evaluation)
+- [Limitations](#limitations)
+- [Contributing](#contributing)
+- [License](#license)
 
-| Dataset Label | Display Name |
+## Key Features
+
+- Drag-and-drop or file-selector image upload with a local preview
+- Ensemble inference from EfficientNet-V2-S and Swin Tiny
+- Predicted lesion name, confidence percentage, and educational risk level
+- Disease-specific causes, symptoms, treatments, prevention, and recovery information
+- Responsive pages for analysis, disease summaries, details, project information, and contact
+- FastAPI prediction service with interactive Swagger documentation
+- HAM10000 preparation, training, checkpoint, and ensemble-evaluation scripts
+- CUDA and mixed-precision support when compatible hardware is available
+
+## Supported Lesion Classes
+
+| Dataset label | Display name |
 |---|---|
 | `akiec` | Actinic Keratosis |
 | `bcc` | Basal Cell Carcinoma |
@@ -26,94 +49,154 @@ DermaVision is a full-stack skin-disease classification system that combines Eff
 | `vasc` | Vascular Lesion |
 | `mel` | Melanoma |
 
+## System Architecture
+
+```text
+Browser / Static Frontend
+        │
+        │  Multipart POST: image + HTTP request
+        ▼
+FastAPI Prediction Server
+        │
+        ├── EfficientNet-V2-S preprocessing and inference
+        │       384 × 384 input
+        │
+        └── Swin Tiny preprocessing and inference
+                224 × 224 input
+        │
+        ▼
+Average model logits
+        │
+        ▼
+Softmax probabilities
+        │
+        ▼
+Predicted class + confidence
+```
+
+The backend loads both trained checkpoints, prepares one image for each model's required input size and normalization pipeline, averages their logits, and applies softmax to produce class probabilities.
+
 ## Technology Stack
 
-- **Backend:** Python, FastAPI, Uvicorn
-- **Deep learning:** PyTorch, TorchVision, TIMM
-- **Image processing:** Albumentations, Pillow, NumPy
-- **Training utilities:** pandas, scikit-learn
-- **Frontend:** HTML, CSS, vanilla JavaScript
-- **Dataset:** HAM10000
+| Area | Technologies |
+|---|---|
+| Backend | Python, FastAPI, Uvicorn |
+| Deep learning | PyTorch, TorchVision, TIMM |
+| Vision preprocessing | Albumentations, Pillow, NumPy |
+| Dataset utilities | pandas, scikit-learn |
+| Frontend | HTML5, CSS3, vanilla JavaScript |
+| Dataset | HAM10000 |
 
 ## Project Structure
 
 ```text
 .
 ├── backend/
-│   └── app.py                 # FastAPI inference server
+│   └── app.py                 # FastAPI prediction server
 ├── frontend/
 │   ├── index.html             # Landing page
-│   ├── analyze.html           # Image upload and prediction interface
-│   ├── diseases.html          # Disease overview page
-│   ├── disease-details.html   # Detailed prediction information
+│   ├── analyze.html           # Image upload interface
+│   ├── diseases.html          # Lesion overview page
+│   ├── disease-details.html   # Prediction information page
 │   ├── about.html             # Project information
 │   ├── contact.html           # Contact page
-│   ├── css/style.css          # Shared styling
+│   ├── css/
+│   │   └── style.css
 │   └── js/
-│       ├── api.js             # Image upload and API integration
-│       ├── app.js             # Local prediction-details rendering
-│       └── diseases-data.js   # Disease information
+│       ├── api.js             # Upload and API integration
+│       ├── app.js             # Prediction details rendering
+│       └── diseases-data.js   # Educational lesion data
 ├── training/
 │   ├── dataset.py             # HAM10000 dataset and transforms
 │   ├── split.py               # Stratified train/validation split
-│   ├── class_weights.py       # Class imbalance weight calculation
-│   ├── losses.py              # Focal loss implementation
+│   ├── class_weights.py       # Class-imbalance weights
+│   ├── losses.py              # Focal-loss implementation
 │   ├── train_effnet.py        # EfficientNet-V2-S training
 │   ├── train_swin.py          # Swin Transformer training
-│   ├── train.py               # One-batch EfficientNet test
-│   └── ensemble_eval.py       # Ensemble evaluation and metrics
-└── .gitignore
+│   ├── train.py               # EfficientNet smoke test
+│   └── ensemble_eval.py       # Ensemble metrics and reports
+├── .gitignore
+└── README.md
 ```
 
-## Model Architecture
+## Prerequisites
 
-1. An uploaded image is resized and normalized independently for each model.
-2. EfficientNet-V2-S processes the image at `384 × 384`.
-3. Swin Tiny processes the image at `224 × 224`.
-4. The logits from both models are averaged.
-5. Softmax produces the final class probabilities.
-6. The highest-probability class and confidence are returned through `/predict`.
+- Python 3.9 or newer
+- `pip` and a virtual-environment tool
+- A modern web browser
+- For training: a CUDA-capable NVIDIA GPU is recommended
+- For CPU-only use: inference is possible, but significantly slower
 
-## Dataset Setup
+A GPU with sufficient memory is recommended for training. Exact memory requirements depend on image size, batch size, mixed-precision settings, and augmentation pipelines.
 
-Download the HAM10000 dataset and metadata, then arrange them as follows:
+## Dataset and Checkpoints
+
+### HAM10000 Dataset
+
+Download the HAM10000 dataset and metadata from the official Kaggle or Harvard Dataverse source, then organize them locally as follows:
 
 ```text
 data/
-├── raw/
-│   ├── HAM10000_metadata.csv
-│   ├── HAM10000_images_part_1/
-│   └── HAM10000_images_part_2/
+└── raw/
+    ├── HAM10000_metadata.csv
+    ├── HAM10000_images_part_1/
+    └── HAM10000_images_part_2/
 
 models/
 ├── effnet.pt
 └── swin.pt
 ```
 
-The `data/` and `models/` directories are intentionally excluded through `.gitignore`.
+The `data/` and `models/` directories are excluded from version control through `.gitignore` because of their size and licensing/data-usage requirements. The raw images are not included in this repository.
+
+### Model Checkpoints
+
+Both checkpoint files must exist before starting the prediction server:
+
+- `models/effnet.pt` — trained EfficientNet-V2-S weights
+- `models/swin.pt` — trained Swin Tiny weights
+
+Pretrained checkpoints are not included. Train them locally using the instructions below or provide your own compatible checkpoints in the same locations.
 
 ## Installation
 
-Python 3.9 or newer is recommended.
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/DurgaPeram/Optimized-Recognition-of-dermal-lession-analysis-using-CNN-and-ViT.git
 cd Optimized-Recognition-of-dermal-lession-analysis-using-CNN-and-ViT
-python -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install fastapi uvicorn torch torchvision timm albumentations pillow numpy pandas scikit-learn python-multipart
 ```
 
-On Windows, activate the virtual environment with:
+### 2. Create a virtual environment
+
+**Linux or macOS:**
 
 ```bash
-.venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 
-## Training
+**Windows:**
 
-Create a stratified dataset split:
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install fastapi uvicorn torch torchvision timm albumentations pillow numpy pandas scikit-learn python-multipart
+```
+
+For a GPU build of PyTorch, install the CUDA-enabled wheel that matches the installed NVIDIA driver and CUDA toolkit. Use the official PyTorch installation selector rather than assuming the CPU/Python packages include GPU support.
+
+## Model Training
+
+Before training, ensure the HAM10000 metadata and image folders are available under `data/raw/`.
+
+### 1. Create the dataset split and class weights
 
 ```bash
 cd training
@@ -121,29 +204,42 @@ python split.py
 python class_weights.py
 ```
 
-Train the CNN:
+The split script uses stratification to preserve class distributions across the training and validation sets.
+
+### 2. Train EfficientNet-V2-S
 
 ```bash
 python train_effnet.py
 ```
 
-Train the Vision Transformer:
+The EfficientNet pipeline uses focal loss, label smoothing, class weights, staged backbone freezing/fine-tuning, mixed precision, and the configured image augmentations.
+
+### 3. Train Swin Tiny
 
 ```bash
 python train_swin.py
 ```
 
-Evaluate the ensemble:
+The Swin pipeline uses weighted cross-entropy, AdamW, staged training, and mixed precision.
+
+### 4. Evaluate the ensemble
 
 ```bash
 python ensemble_eval.py
 ```
 
-The training scripts use GPU acceleration automatically when CUDA is available. Best-performing checkpoints are saved under `../models/effnet.pt` and `../models/swin.pt`.
+Training scripts automatically use CUDA when it is detected. The best checkpoints are intended to be saved as:
 
-## Run the Application
+```text
+models/effnet.pt
+models/swin.pt
+```
 
-Start the FastAPI server:
+## Running the Application
+
+### Start the FastAPI backend
+
+From the repository root:
 
 ```bash
 cd backend
@@ -156,49 +252,64 @@ The API will be available at:
 http://127.0.0.1:8000
 ```
 
-Interactive API documentation is available at:
+Interactive documentation:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-Serve the frontend from the repository root:
+### Start the frontend
+
+Open a second terminal from the repository root:
 
 ```bash
 cd frontend
 python -m http.server 5500
 ```
 
-Open:
+Then open:
 
 ```text
 http://127.0.0.1:5500
 ```
 
-The frontend sends prediction requests to:
+The frontend sends requests to:
 
 ```text
 http://127.0.0.1:8000/predict
 ```
 
-## API Usage
+If the backend host or port changes, update the API URL in `frontend/js/api.js`.
 
-### Prediction Endpoint
+## API Reference
+
+### Health check
+
+```http
+GET /
+```
+
+### Predict a lesion
 
 ```http
 POST /predict
 Content-Type: multipart/form-data
 ```
 
-Example with `curl`:
+**Form fields:**
+
+| Field | Type | Required | Description |
+|---|---|---:|---|
+| `file` | image file | Yes | Dermatoscopic image upload |
+
+**Example:**
 
 ```bash
-curl -X POST \
-  "http://127.0.0.1:8000/predict" \
+curl -X POST "http://127.0.0.1:8000/predict" \
   -F "file=@skin-lesion.jpg"
 ```
 
-Example response:
+**Example success response:**
 
 ```json
 {
@@ -207,33 +318,62 @@ Example response:
 }
 ```
 
-## Training Details
+The exact field set may vary if the backend implementation is updated. Treat the response as an application contract and update this section whenever the API changes.
 
-- HAM10000 metadata is mapped to seven numerical classes.
-- Training and validation images use separate Albumentations pipelines.
-- Image augmentations include flipping, brightness/contrast changes, shifting, scaling, and rotation.
-- The EfficientNet pipeline uses focal loss with label smoothing and class weights.
-- The Swin pipeline uses weighted cross-entropy.
-- Both models use AdamW and mixed-precision training.
-- EfficientNet and Swin use staged backbone freezing and fine-tuning.
-- Ensemble evaluation reports accuracy, macro F1 score, and a classification report.
+## Configuration
+
+- Backend host and port: configure in the `uvicorn` command or deployment configuration
+- Frontend API URL: `frontend/js/api.js`
+- EfficientNet checkpoint: `models/effnet.pt`
+- Swin checkpoint: `models/swin.pt`
+- Dataset metadata: `data/raw/HAM10000_metadata.csv`
+- Dataset images: `data/raw/HAM10000_images_part_1/` and `HAM10000_images_part_2/`
+
+CORS settings in `backend/app.py` may need to be restricted or expanded before public deployment.
+
+## Evaluation
+
+The ensemble evaluation script reports:
+
+- Overall accuracy
+- Macro F1 score
+- Per-class precision, recall, and F1 score
+- Classification report
+
+The repository does not currently publish measured metrics or model checkpoints. Record the dataset split, random seed, software versions, hardware, training settings, and measured results here before treating model performance as reproducible or production-ready.
 
 ## Limitations
 
-- Pretrained model checkpoints are not included in the repository.
-- The raw HAM10000 dataset is excluded due to repository size and must be obtained separately.
-- The static frontend is designed for local use and contains no authentication or persistent server-side storage.
-- Predictions and detailed medical guidance should not be interpreted as clinical diagnoses.
+- Pretrained checkpoints are not distributed with this repository
+- HAM10000 must be obtained and prepared separately
+- HAM10000 is a benchmark dataset and may not represent every skin tone, lesion type, or clinical environment
+- Ensemble confidence is not a calibrated probability of disease presence
+- The static frontend has no authentication or server-side persistent storage
+- Uploaded images are handled by the local development server and should not be used with personally identifiable or sensitive medical data
+- Development settings, CORS configuration, and local checkpoint loading are not hardened for public deployment
+- Predictions should not be interpreted as clinical diagnoses
 
 ## Contributing
 
-Contributions are welcome:
+Contributions are welcome.
 
 1. Fork the repository.
-2. Create a feature branch.
-3. Commit your changes.
-4. Open a pull request with a clear description and test steps.
+2. Create a branch from `main`.
+3. Make focused code or documentation changes.
+4. Test the backend and frontend locally.
+5. Commit the changes with a clear message.
+6. Open a pull request describing the motivation, implementation, and test steps.
+
+Please do not commit datasets, private medical images, or trained model checkpoints unless they are intentionally licensed and safe to distribute.
 
 ## License
 
-No license file is currently included. A license should be added before the project is reused or redistributed.
+No license file is currently included. A license is required before the project can be confidently reused or redistributed. Until one is added, all rights remain with the project owner.
+
+When a license is selected, replace this section with the license name and a link to `LICENSE`, for example:
+
+```text
+MIT License
+
+See LICENSE for the full license text.
+```
